@@ -1,11 +1,14 @@
 {
-    "domain": "ubibot_ws1",
-    "name": "UbiBot WS-1",
-    "config_flow": true,
-    "version": "1.0.1",
-    "documentation": "https://github.com/richardctrimble/ubibot_ws1",
-    "requirements": [],
-    "dependencies": [],
-    "codeowners": ["@richardctrimble"]
-  }
+  "domain": "ubibot_ws1",
+  "name": "UbiBot WS-1",
+  "version": "1.0.0",
+  "documentation": "https://github.com/richardctrimble/ubibot_ws1",
+  "requirements": ["aiohttp"],
+  "dependencies": [],
+  "codeowners": ["@richardctrimble"],
+  "config_flow": true
+}
+
+  
+
   
