@@ -6,7 +6,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "ubibot_ws1"
+from .const import DOMAIN
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the integration via YAML, if needed."""
