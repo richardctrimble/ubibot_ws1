@@ -18,9 +18,9 @@ class UbiBotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self._validate_credentials(user_input["api_key"], user_input["device_id"])
                 return self.async_create_entry(title="UbiBot WS-1", data=user_input)
             except aiohttp.ClientError:
-                errors["base"] = "cannot_connect"
+                errors["base"] = "Authication Connection Failed"
             except Exception:
-                errors["base"] = "auth_failed"
+                errors["base"] = "Authication Test Failed"
 
         data_schema = vol.Schema({
             vol.Required("api_key"): str,
@@ -34,7 +34,7 @@ class UbiBotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _validate_credentials(self, api_key, device_id):
         """Validates the API key and device ID by making a test request to the Ubibot API."""
         # Use aiohttp to send a request to the Ubibot API
-        url = f"https://api.ubibot.io/v1.0/devices/{device_id}?api_key={api_key}"
+        url = f"https://api.ubibot.com/channels/{device_id}?account_key={api_key}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status != 200:
