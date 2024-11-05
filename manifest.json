@@ -1,7 +1,7 @@
 {
   "domain": "ubibot_ws1",
   "name": "UbiBot WS-1",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "documentation": "https://github.com/richardctrimble/ubibot_ws1",
   "requirements": ["aiohttp"],
   "dependencies": [],
