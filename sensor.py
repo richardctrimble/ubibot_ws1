@@ -1,14 +1,33 @@
-import requests
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import logging
 from datetime import timedelta
+import aiohttp
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from .const import DOMAIN
 
-SENSOR_TYPES = ["temperature", "humidity", "light", "voltage", "wifi_rssi", "knocks"]
+_LOGGER = logging.getLogger(__name__)
+
+# Map field numbers to specific sensor details
+SENSOR_TYPES = {
+    "field1": {"name": "temperature", "unit": "°C", "device_class": "temperature"},
+    "field2": {"name": "humidity", "unit": "%", "device_class": "humidity"},
+    "field3": {"name": "light", "unit": "lx", "device_class": "illuminance"},
+    "field4": {"name": "voltage", "unit": "V", "device_class": "voltage"},
+    "field5": {"name": "wifi_signal", "unit": "dB", "device_class": "signal_strength"},
+    "field6": {"name": "vibration", "unit": "count"},
+    "field7": {"name": "knocks", "unit": "count"},
+    "traffic_out": {"name": "traffic_out", "unit": "kB"},
+    "traffic_in": {"name": "traffic_in", "unit": "kB"}
+}
 
 class UbiBotSensor(SensorEntity):
-    def __init__(self, coordinator: DataUpdateCoordinator, sensor_type: str, device_id: str):
+    """Representation of a UbiBot sensor."""
+
+    def __init__(self, coordinator: DataUpdateCoordinator, sensor_type: str, field: str, device_id: str):
+        """Initialize the UbiBot sensor."""
         self.coordinator = coordinator
         self.sensor_type = sensor_type
+        self.field = field
         self.device_id = device_id
 
     @property
@@ -17,7 +36,8 @@ class UbiBotSensor(SensorEntity):
 
     @property
     def state(self):
-        return self.coordinator.data[self.sensor_type]
+        # Use field mapping to get the appropriate sensor state
+        return self.coordinator.data.get(self.field)
 
     @property
     def name(self):
@@ -25,35 +45,47 @@ class UbiBotSensor(SensorEntity):
 
     @property
     def unit_of_measurement(self):
-        if self.sensor_type == "temperature":
-            return "°C"
-        elif self.sensor_type == "humidity":
-            return "%"
-        elif self.sensor_type == "light":
-            return "lux"
-        elif self.sensor_type == "voltage":
-            return "V"
-        elif self.sensor_type == "wifi_rssi":
-            return "dBm"
-        elif self.sensor_type == "knocks":
-            return "count"
+        return SENSOR_TYPES[self.field].get("unit")
+
+    @property
+    def device_class(self):
+        return SENSOR_TYPES[self.field].get("device_class")
 
     async def async_update(self):
-        self.coordinator.async_update()
+        """Request an update from the coordinator."""
+        await self.coordinator.async_request_refresh()
+
 
 class UbiBotDataUpdateCoordinator(DataUpdateCoordinator):
+    """Coordinator to fetch data from the Ubibot API."""
+
     def __init__(self, hass, entry):
+        """Initialize the coordinator."""
         self.entry = entry
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(minutes=5))
+        self.api_key = entry.data["api_key"]
+        self.device_id = entry.data["device_id"]
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(minutes=2))
 
     async def _async_update_data(self):
-        response = requests.get(f"https://api.ubibot.io/v1.0/devices/{self.entry.data['device_id']}/data", headers={"X-Authorization": self.entry.data["api_key"]})
-        data = response.json()
-        return {
-            "temperature": data["temperature"],
-            "humidity": data["humidity"],
-            "light": data["light"],
-            "voltage": data["voltage"],
-            "wifi_rssi": data["wifi_rssi"],
-            "knocks": data["knocks"]
-        }
+        """Fetch data from the Ubibot API."""
+        url = f"https://api.ubibot.com/channels/{self.device_id}?account_key={self.api_key}"
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    data = await response.json()
+
+            # Access the last values using the correct fields
+            last_values = data.get("channel", {}).get("last_values")
+            if last_values:
+                # Use from_json to parse the embedded JSON
+                parsed_values = {key: value["value"] for key, value in last_values.items() if key in SENSOR_TYPES}
+                return parsed_values
+            else:
+                _LOGGER.warning("No data found in 'last_values'")
+                return {}
+
+        except aiohttp.ClientError as e:
+            _LOGGER.error("Failed to fetch data from Ubibot API: %s", e)
+            raise UpdateFailed(f"Error communicating with API: {e}")
