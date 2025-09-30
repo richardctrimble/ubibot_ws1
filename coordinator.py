@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import aiohttp
 
@@ -68,14 +68,39 @@ class UbiBotDataUpdateCoordinator(DataUpdateCoordinator):
             
             # Add diagnostic data
             sensor_data["mac_address"] = channel_data.get("mac_address", "Unknown")
-            sensor_data["last_entry_date"] = channel_data.get("last_entry_date", "Unknown")
-            sensor_data["activated_at"] = channel_data.get("activated_at", "Unknown")
+            
+            # Parse and format timestamps properly
+            last_entry_date = channel_data.get("last_entry_date")
+            if last_entry_date and last_entry_date != "Unknown":
+                try:
+                    # Parse ISO format timestamp and convert to Home Assistant timestamp format
+                    dt = datetime.fromisoformat(last_entry_date.replace('Z', '+00:00'))
+                    sensor_data["last_entry_date"] = dt.isoformat()
+                except (ValueError, AttributeError):
+                    sensor_data["last_entry_date"] = last_entry_date
+            else:
+                sensor_data["last_entry_date"] = "Unknown"
+                
+            activated_at = channel_data.get("activated_at")
+            if activated_at and activated_at != "Unknown":
+                try:
+                    dt = datetime.fromisoformat(activated_at.replace('Z', '+00:00'))
+                    sensor_data["activated_at"] = dt.isoformat()
+                except (ValueError, AttributeError):
+                    sensor_data["activated_at"] = activated_at
+            else:
+                sensor_data["activated_at"] = "Unknown"
+                
             sensor_data["firmware"] = channel_data.get("firmware", "Unknown")
             sensor_data["device_id"] = channel_data.get("device_id", "Unknown")
             sensor_data["serial"] = channel_data.get("full_serial", channel_data.get("serial", "Unknown"))
             sensor_data["last_ip"] = channel_data.get("last_ip", "Unknown")
             sensor_data["plan_code"] = channel_data.get("plan_code", "Unknown")
-            sensor_data["usage"] = float(channel_data.get("usage", 0))
+            
+            # Convert usage from bytes to KB
+            usage_bytes = float(channel_data.get("usage", 0))
+            sensor_data["usage"] = round(usage_bytes / 1024, 2)  # Convert bytes to KB
+            
             sensor_data["last_entry_id"] = channel_data.get("last_entry_id", "Unknown")
             
             # Parse status for additional info

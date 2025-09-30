@@ -52,28 +52,28 @@ SENSOR_TYPES: dict[str, dict[str, Any]] = {
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field5": {
-        "name": "WiFi Signal",
+        "name": "WiFi Signal Strength",
         "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
         "unit": "dBm",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field6": {
-        "name": "Vibration",
+        "name": "Vibration Index",
         "unit": None,
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field7": {
-        "name": "Knocks",
+        "name": "Knock Count",
         "unit": None,
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "traffic_out": {
-        "name": "Traffic Out",
+        "name": "Data Traffic Out",
         "unit": "kB",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "traffic_in": {
-        "name": "Traffic In", 
+        "name": "Data Traffic In", 
         "unit": "kB",
         "state_class": SensorStateClass.MEASUREMENT,
     },
@@ -87,12 +87,12 @@ DIAGNOSTIC_SENSOR_TYPES: dict[str, dict[str, Any]] = {
         "entity_category": "diagnostic",
     },
     "last_entry_date": {
-        "name": "Last Data Entry",
+        "name": "Last Data Update",
         "device_class": SensorDeviceClass.TIMESTAMP,
         "entity_category": "diagnostic",
     },
     "activated_at": {
-        "name": "Device Activated",
+        "name": "Activation Date",
         "device_class": SensorDeviceClass.TIMESTAMP,
         "entity_category": "diagnostic",
     },
@@ -112,7 +112,7 @@ DIAGNOSTIC_SENSOR_TYPES: dict[str, dict[str, Any]] = {
         "entity_category": "diagnostic",
     },
     "last_ip": {
-        "name": "Last IP Address",
+        "name": "IP Address",
         "icon": "mdi:ip-network",
         "entity_category": "diagnostic",
     },
@@ -122,24 +122,24 @@ DIAGNOSTIC_SENSOR_TYPES: dict[str, dict[str, Any]] = {
         "entity_category": "diagnostic",
     },
     "usage": {
-        "name": "Data Usage",
-        "unit": "bytes",
+        "name": "Total Data Usage",
+        "unit": "kB",
         "icon": "mdi:database",
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "entity_category": "diagnostic",
     },
     "last_entry_id": {
-        "name": "Last Entry ID", 
+        "name": "Entry ID", 
         "icon": "mdi:counter",
         "entity_category": "diagnostic",
     },
     "wifi_ssid": {
-        "name": "WiFi SSID",
+        "name": "WiFi Network",
         "icon": "mdi:wifi",
         "entity_category": "diagnostic", 
     },
     "usb_powered": {
-        "name": "USB Powered",
+        "name": "USB Power",
         "icon": "mdi:usb",
         "entity_category": "diagnostic",
     },
@@ -185,7 +185,7 @@ class UbiBotSensor(CoordinatorEntity[UbiBotDataUpdateCoordinator], SensorEntity)
         self._attr_unique_id = f"{config_entry.entry_id}_{sensor_key}"
         
         sensor_config = DIAGNOSTIC_SENSOR_TYPES[sensor_key] if is_diagnostic else SENSOR_TYPES[sensor_key]
-        self._attr_name = f"UbiBot {sensor_config['name']}"
+        self._attr_name = sensor_config['name']
         self._attr_device_class = sensor_config.get("device_class")
         self._attr_native_unit_of_measurement = sensor_config.get("unit")
         self._attr_state_class = sensor_config.get("state_class")
