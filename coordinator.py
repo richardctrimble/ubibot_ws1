@@ -66,6 +66,27 @@ class UbiBotDataUpdateCoordinator(DataUpdateCoordinator):
             sensor_data["traffic_out"] = float(channel_data.get("traffic_out", 0))
             sensor_data["traffic_in"] = float(channel_data.get("traffic_in", 0))
             
+            # Add diagnostic data
+            sensor_data["mac_address"] = channel_data.get("mac_address", "Unknown")
+            sensor_data["last_entry_date"] = channel_data.get("last_entry_date", "Unknown")
+            sensor_data["activated_at"] = channel_data.get("activated_at", "Unknown")
+            sensor_data["firmware"] = channel_data.get("firmware", "Unknown")
+            sensor_data["device_id"] = channel_data.get("device_id", "Unknown")
+            sensor_data["serial"] = channel_data.get("full_serial", channel_data.get("serial", "Unknown"))
+            sensor_data["last_ip"] = channel_data.get("last_ip", "Unknown")
+            sensor_data["plan_code"] = channel_data.get("plan_code", "Unknown")
+            sensor_data["usage"] = float(channel_data.get("usage", 0))
+            sensor_data["last_entry_id"] = channel_data.get("last_entry_id", "Unknown")
+            
+            # Parse status for additional info
+            try:
+                status_data = json.loads(channel_data.get("status", "{}"))
+                sensor_data["wifi_ssid"] = status_data.get("ssid", "Unknown")
+                sensor_data["usb_powered"] = status_data.get("usb", "Unknown") == "1"
+            except (json.JSONDecodeError, TypeError):
+                sensor_data["wifi_ssid"] = "Unknown"
+                sensor_data["usb_powered"] = False
+            
             return sensor_data
             
         except aiohttp.ClientError as err:
