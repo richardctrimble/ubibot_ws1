@@ -10,14 +10,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    PERCENTAGE,
-    UnitOfElectricPotential,
-    UnitOfInformation,
-    UnitOfSignalStrength,
-    UnitOfTemperature,
-    UnitOfIlluminance,
-)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -33,31 +25,31 @@ SENSOR_TYPES: dict[str, dict[str, Any]] = {
     "field1": {
         "name": "Temperature",
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "unit": UnitOfTemperature.CELSIUS,
+        "unit": "°C",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field2": {
         "name": "Humidity", 
         "device_class": SensorDeviceClass.HUMIDITY,
-        "unit": PERCENTAGE,
+        "unit": "%",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field3": {
         "name": "Light",
         "device_class": SensorDeviceClass.ILLUMINANCE,
-        "unit": UnitOfIlluminance.LUX,
+        "unit": "lx",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field4": {
         "name": "Voltage",
         "device_class": SensorDeviceClass.VOLTAGE,
-        "unit": UnitOfElectricPotential.VOLT,
+        "unit": "V",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field5": {
         "name": "WiFi Signal",
         "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
-        "unit": UnitOfSignalStrength.DECIBEL,
+        "unit": "dBm",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "field6": {
@@ -72,12 +64,12 @@ SENSOR_TYPES: dict[str, dict[str, Any]] = {
     },
     "traffic_out": {
         "name": "Traffic Out",
-        "unit": UnitOfInformation.KILOBYTES,
+        "unit": "kB",
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "traffic_in": {
         "name": "Traffic In", 
-        "unit": UnitOfInformation.KILOBYTES,
+        "unit": "kB",
         "state_class": SensorStateClass.MEASUREMENT,
     },
 }
