@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "UbiBot WS-1",
+        "description": "Set up your UbiBot WS-1 device",
+        "data": {
+          "account_key": "Account Key",
+          "channel_id": "Channel ID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to UbiBot API",
+      "invalid_auth": "Invalid authentication credentials", 
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "UbiBot WS-1 Options",
+        "description": "Configure update interval",
+        "data": {
+          "scan_interval": "Update interval (minutes)"
+        }
+      }
+    }
+  }
+}

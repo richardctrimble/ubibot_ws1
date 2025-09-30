@@ -1,61 +1,125 @@
+"""Config flow for UbiBot WS-1 integration."""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import aiohttp
 import voluptuous as vol
+
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
 from homeassistant.const import CONF_SCAN_INTERVAL
-import aiohttp  # Import for API calls
+from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
+import homeassistant.helpers.config_validation as cv
 
-from .const import DOMAIN, VERSION
+from .const import DOMAIN
 
-class UbiBotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+_LOGGER = logging.getLogger(__name__)
 
-    async def async_step_user(self, user_input=None):
-        errors = {}
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required("account_key"): str,
+        vol.Required("channel_id"): str,
+    }
+)
+
+
+async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+    """Validate the user input allows us to connect."""
+    url = f"https://api.ubibot.com/channels/{data['channel_id']}?account_key={data['account_key']}"
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status == 401:
+                    raise InvalidAuth
+                elif response.status == 404:
+                    raise CannotConnect("Channel not found")
+                elif response.status != 200:
+                    raise CannotConnect(f"API returned status {response.status}")
+                    
+                await response.json()  # Ensure response is valid JSON
+                
+    except aiohttp.ClientError as err:
+        raise CannotConnect(f"Network error: {err}") from err
+    except Exception as err:
+        raise CannotConnect(f"Unexpected error: {err}") from err
+
+    return {"title": f"UbiBot WS-1 ({data['channel_id']})"}
+
+
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for UbiBot WS-1."""
+
+    VERSION = 1
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle the initial step."""
+        errors: dict[str, str] = {}
+        
         if user_input is not None:
             try:
-                # Call a function to validate the API key and device ID
-                await self._validate_credentials(user_input["account_key"], user_input["channel_id"])
-                return self.async_create_entry(title="UbiBot WS-1", data=user_input)
-            except aiohttp.ClientError:
-                errors["base"] = f"Authentication Connection Failed - v{VERSION}"
-            except Exception as ex:
-                errors["base"] = f"Authentication Test Failed: {str(ex)} - v{VERSION}"
-
-        data_schema = vol.Schema({
-            vol.Required("account_key"): str,
-            vol.Required("channel_id"): str,
-            vol.Optional(CONF_SCAN_INTERVAL, default=2): int,  # Default to 2 minutes
-        })
+                info = await validate_input(self.hass, user_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                await self.async_set_unique_id(user_input["channel_id"])
+                self._abort_if_unique_id_configured()
+                
+                return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
+            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
 
-    async def _validate_credentials(self, account_key, channel_id):
-        """Validates the API key and channel ID by making a test request to the Ubibot API."""
-        # Use aiohttp to send a request to the Ubibot API
-        url = f"https://api.ubibot.com/channels/{channel_id}?account_key={account_key}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return await response.json()  # or handle as needed
-                elif response.status == 404:
-                    raise Exception("Channel not found. Please check the channel ID.")
-                elif response.status == 401:
-                    raise Exception("Unauthorized access. Please check your account key.")
-                else:
-                    raise Exception("Unexpected error occurred.")
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> OptionsFlowHandler:
+        """Create the options flow."""
+        return OptionsFlowHandler(config_entry)
 
-    async def async_step_options(self, user_input=None):
-      """Manage the options."""
-      if user_input is not None:
-          return self.async_create_entry(title="", data=user_input)
 
-      current_interval = self.options.get(CONF_SCAN_INTERVAL, 2)
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle options."""
 
-      return self.async_show_form(
-          step_id="options",
-          data_schema=vol.Schema({
-              vol.Optional(CONF_SCAN_INTERVAL, default=current_interval): int,
-          })
-    )
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current_interval = self.config_entry.options.get(CONF_SCAN_INTERVAL, 2)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL, default=current_interval
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+                }
+            ),
+        )
+
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(HomeAssistantError):
+    """Error to indicate there is invalid auth."""
