@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -209,15 +210,21 @@ class UbiBotSensor(CoordinatorEntity[UbiBotDataUpdateCoordinator], SensorEntity)
         )
 
     @property
-    def native_value(self) -> float | str | bool | None:
+    def native_value(self) -> float | str | bool | datetime | None:
         """Return the native value of the sensor."""
         if self.coordinator.data:
             value = self.coordinator.data.get(self._sensor_key)
             if value is not None:
-                # Handle different value types based on sensor type
-                if self._sensor_key in ["mac_address", "last_entry_date", "activated_at", 
-                                      "firmware", "device_id", "serial", "last_ip", 
-                                      "plan_code", "last_entry_id", "wifi_ssid"]:
+                # Handle timestamp sensors - return datetime objects directly
+                if self._sensor_key in ["last_entry_date", "activated_at"]:
+                    # Return datetime object for timestamp sensors, or None if invalid
+                    if isinstance(value, datetime):
+                        return value
+                    else:
+                        return None
+                # Handle other string sensors
+                elif self._sensor_key in ["mac_address", "firmware", "device_id", "serial", 
+                                        "last_ip", "plan_code", "last_entry_id", "wifi_ssid"]:
                     return str(value)
                 elif self._sensor_key == "usb_powered":
                     return str(value)  # Convert boolean to string for display

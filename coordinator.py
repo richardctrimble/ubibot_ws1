@@ -73,23 +73,23 @@ class UbiBotDataUpdateCoordinator(DataUpdateCoordinator):
             last_entry_date = channel_data.get("last_entry_date")
             if last_entry_date and last_entry_date != "Unknown":
                 try:
-                    # Parse ISO format timestamp and convert to Home Assistant timestamp format
+                    # Parse ISO format timestamp - Home Assistant expects datetime objects for timestamp sensors
                     dt = datetime.fromisoformat(last_entry_date.replace('Z', '+00:00'))
-                    sensor_data["last_entry_date"] = dt.isoformat()
+                    sensor_data["last_entry_date"] = dt
                 except (ValueError, AttributeError):
-                    sensor_data["last_entry_date"] = last_entry_date
+                    sensor_data["last_entry_date"] = None
             else:
-                sensor_data["last_entry_date"] = "Unknown"
+                sensor_data["last_entry_date"] = None
                 
             activated_at = channel_data.get("activated_at")
             if activated_at and activated_at != "Unknown":
                 try:
                     dt = datetime.fromisoformat(activated_at.replace('Z', '+00:00'))
-                    sensor_data["activated_at"] = dt.isoformat()
+                    sensor_data["activated_at"] = dt
                 except (ValueError, AttributeError):
-                    sensor_data["activated_at"] = activated_at
+                    sensor_data["activated_at"] = None
             else:
-                sensor_data["activated_at"] = "Unknown"
+                sensor_data["activated_at"] = None
                 
             sensor_data["firmware"] = channel_data.get("firmware", "Unknown")
             sensor_data["device_id"] = channel_data.get("device_id", "Unknown")
