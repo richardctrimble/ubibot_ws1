@@ -1,7 +1,6 @@
 {
     "name": "UbiBot WS-1",
-    "content_in_root": false,
+    "content_in_root": true,
     "domains": ["ubibot_ws1"],
-    "country": "GB"
-  }
-  
+    "homeassistant": "2023.1.0"
+}  
