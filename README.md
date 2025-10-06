@@ -59,25 +59,6 @@ After setup, you can configure the following options:
 
 - **Update Interval**: How often to poll the UbiBot API (1-60 minutes, default: 2 minutes)
 
-## Supported Data
-
-The integration fetches data exactly as shown in your working REST configuration:
-
-```yaml
-# This YAML configuration is equivalent to what this integration provides
-rest:
-  - scan_interval: 120
-    resource: https://api.ubibot.com/channels/17713?account_key=YOUR_KEY
-    method: GET
-    sensor:
-      - name: ubibot_temp
-        value_template: "{{ (value_json.channel.last_values | from_json).field1.value| float |round(2) }}"
-        device_class: temperature
-        unit_of_measurement: "°C" 
-        state_class: measurement
-      # ... and so on for all sensors
-```
-
 ## Troubleshooting
 
 ### Common Issues
